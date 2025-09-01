@@ -1,0 +1,9 @@
+DOMAIN_NAME=yourlogin.42.fr
+MYSQL_ROOT_PASSWORD=replasce_me
+MYSQL_DATABASE=replace_me
+MYSQL_USER=replace_me
+MYSQL_PASSWORD=replace_me
+WP_DB_NAME=replace_me
+WP_DB_USER=replace_me
+WP_DB_PASSWORD=replace_me
+WP_DB_HOST=replace_me

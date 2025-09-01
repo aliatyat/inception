@@ -1,0 +1,66 @@
+
+
+# Define services (Containers)
+services:
+
+  # Service: Nginx (Web server & SSL Termination)
+  nginx:
+    build: ./requirements/nginx
+    container_name: nginx
+    ports:
+      - "443:443" # Map host port 443 to container port 443 (HTTPS)
+    volumes:
+      - wordpress_data:/var/www/html # Mount WP files
+    networks:
+      - inception_net
+    env_file:
+      - .env
+    depends_on: # Ensures wordpress is ready before nginx tries to proxy to it
+      - wordpress
+    restart: unless-stopped
+
+  # Service: Wordpress + PHP-FPM
+  wordpress:
+    build: ./requirements/wordpress
+    container_name: wordpress
+    volumes:
+      - wordpress_data:/var/www/html # Share files with nginx
+    networks:
+      - inception_net
+    env_file:
+      - .env
+    restart: unless-stopped
+    depends_on: # Ensures mariadb starts before wordpress
+      - mariadb
+    expose:
+      - "9000" # php-fpm - NOTE: This should be aligned with other keys at same level
+
+  # Service: MariaDB Database
+  mariadb:
+    build: ./requirements/mariadb # Path to the Dockerfile
+    container_name: mariadb # Container name (must be like service name)
+    volumes:
+      - mariadb_data:/var/lib/mysql # DB persistence
+    networks:
+      - inception_net # Attach to the custom network
+    env_file:
+      - .env # Load environment vars from this file
+    restart: unless-stopped # Automatically restart unless manually stopped
+    expose:
+      - "3306"
+
+# Define Volumes (Persistent Data) - MUST BE AT ROOT LEVEL
+volumes:
+  mariadb_data: # Named volume for the database
+    driver: local
+
+  wordpress_data: # Named volume for WordPress files (themes, plugins, uploads)
+    driver: local
+
+# Define Network (Container Communication) - MUST BE AT ROOT LEVEL
+networks:
+  inception_net:
+    driver: bridge
+    
+
+# This network allows containers to discover each other by their service name (e.g., 'nginx' can ping 'wordpress')
