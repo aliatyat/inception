@@ -46,32 +46,55 @@ inception/
 
 3) .env (single source of truth)
 
+A .env (short for "environment") file is a simple text file. Each line contains a key-value pair that defines an environment variable. Its sole purpose is to store configuration settings for your application, separate from your code.
+
+Example srcs/.env file for Inception:
 Put this in srcs/.env and edit values (especially passwords & emails):
 
-# Domain & users
-DOMAIN_NAME=ins.42.fr
-WP_TITLE=Inception Blog
-WP_ADMIN_USER=admin
-WP_ADMIN_PASSWORD=StrongAdminPass42!
-WP_ADMIN_EMAIL=admin@example.com
-WP_USER=author
-WP_USER_PASSWORD=StrongUserPass42!
-WP_USER_EMAIL=author@example.com
+# Domain name (MANDATORY for subject)
+DOMAIN_NAME=yourlogin.42.fr
 
-
-# MariaDB
-MYSQL_ROOT_PASSWORD=StrongRootPass42!
+# MariaDB/MySQL Configuration
+MYSQL_ROOT_PASSWORD=super_secret_root_password_123!
 MYSQL_DATABASE=wordpress
-MYSQL_USER=wpuser
-MYSQL_PASSWORD=StrongDBPass42!
+MYSQL_USER=wp_database_guy
+MYSQL_PASSWORD=another_strong_password_456!
 
-
-# Paths on host (bind mounts)
-HOST_WP=/home/ins/data/wordpress
-HOST_DB=/home/ins/data/mariadb
+# WordPress Configuration (for wp-config.php)
+WP_DB_NAME=wordpress
+WP_DB_USER=wp_database_guy
+WP_DB_PASSWORD=another_strong_password_456!
+WP_DB_HOST=mariadb # <- Uses Docker's internal DNS via the service name!
 
 Tip: The subject usually forbids committing real secrets. Commit a .env.sample (without secrets) and keep your real .env local.
 
+----------------------
+Why Do You NEED It? (The "Why")
+The subject mandates its use for several crucial reasons:
+
+1-Security (The Biggest Reason):
+
+The Rule: "Passwords must not be present in your Dockerfiles." or your code.
+
+The Problem: If you hardcode a password like DB_PASS='12345' directly in your Dockerfile or docker-compose.yml, it becomes part of your project's history. If you push this to GitHub, it's public forever.
+
+The Solution: The .env file is explicitly added to your .gitignore file. This means your secrets never get uploaded to version control. You can share your code freely without exposing your credentials.
+
+2-Configuration Management:
+
+It separates configuration (which changes based on the environment: your VM, your peer's VM, a production server) from the application code (which should be static).
+
+For example, the DOMAIN_NAME might be yourlogin.42.fr on your machine but evaluatorlogin.42.fr on someone else's. With a .env file, you only change the value in one place, not hunt through all your configuration files.
+
+3-Compliance with the Subject:
+
+The subject explicitly states: "The use of environment variables is mandatory. It is also strongly recommended to use a .env file...". Not using one means not following instructions.
+
+4-Docker and Docker Compose Integration:
+
+Docker Compose has built-in support for .env files. It automatically reads them, which makes injecting these values into your containers incredibly easy, as we saw in the docker-compose.yml with the env_file: directive.
+
+-----------------------
 
 4) docker-compose.yml
 
@@ -216,9 +239,29 @@ SQL
 mysqladmin --socket=/run/mysqld/mysqld.sock -p"${MYSQL_ROOT_PASSWORD}" shutdown
 fi
 
-
 exec mysqld_safe
 
+-----------------------
+How It All Works Together
+1-Build: When you run docker-compose build, Docker reads the Dockerfile.
+
+2-Layers: It starts with Debian, installs packages, copies your files, and creates an image.
+
+3-Run: When the container starts, it runs CMD ["bash", "/tmp/configure.sh"].
+
+4-First Boot: The script checks if the database is new. If it is:
+
+  It initializes the data directory.
+
+  Starts a temporary, isolated MariaDB process.
+
+  Runs SQL commands to set passwords, create users, and databases based on your .env file.
+
+  Shuts down the temporary process.
+
+5-Final Process: The script then starts the final, main MariaDB process (mysqld) in the foreground. This is the proper daemon that accepts connections from your WordPress container. The container's life is tied to this process.
+
+--------------------
 
 6) WordPress + PHP‑FPM image
 requirements/wordpress/Dockerfile
