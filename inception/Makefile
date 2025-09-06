@@ -1,54 +1,50 @@
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    Makefile                                           :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: user <user@student.42.fr>                  +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2023/01/01 00:00:00 by user              #+#    #+#              #
+#    Updated: 2023/01/01 00:00:00 by user             ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
+
 NAME = inception
+DATA_DIR = ./data
+COMPOSE_FILE = ./srcs/docker-compose.yml
 
-# The shell command "pwd" gets the full path to current dir
+# Check if docker compose is available, otherwise use docker-compose
+DOCKER_COMPOSE = $(shell command -v docker-compose 2> /dev/null || echo "docker compose")
 
-SRC_PATH = $(shell pwd)
+all: build up
 
-# The first taget (all) is the default traget when "make"
+build:
+	@mkdir -p $(DATA_DIR)/wordpress
+	@mkdir -p $(DATA_DIR)/mariadb
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) build
 
-all : build up
+up:
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) up -d
 
-# Build the custom images using docker-compose
+down:
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) down
 
-build :
-	docker compose -f ./srcs/docker-compose.yml build
+clean: down
+	@docker system prune -a --force
 
-# Creat and start all containers in the background 
+fclean: clean
+	@sudo rm -rf $(DATA_DIR)/wordpress/*
+	@sudo rm -rf $(DATA_DIR)/mariadb/*
+	@docker volume rm $$(docker volume ls -q) 2>/dev/null || true
+	@docker network rm $$(docker network ls -q) 2>/dev/null || true
 
-up :
-	docker compose -f ./srcs/docker-compose.yml up -d
+re: fclean all
 
-# Stop and remove containers, network, but keeps the volumes
+ps:
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) ps
 
-down :
-	docker compose -f ./srcs/docker-compose.yml down
+logs:
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) logs
 
-# Stops containers and removes everything, including volumes and built images (a full reset)
-
-clean : down
-	docker compose -f ./srcs/docker-compose.yml down -v --rmi all
-	docker system prune -a --force
-
-# Full clean rebuild: clean + build + up
-
-re : clean all
-
-# View logs from all services. Use "make logs s=nginx" to see only nginx logs
-
-logs :
-	docker compose -f ./srcs/docker-compose.yml logs --follow $(s)
-
-# Show the status of the containers (similar to "docker ps")
-
-ps : 
-	docker compose -f ./srcs/docker-compose.yml ps
-
-# Open a shell inside a running container. Usage: "make exec c=nginx"
-
-exec :
-	docker exec -it $(c) sh
-
-# This target tells `make` that these rules are not actual files to be created
-
-.PHONY : all build up down clean re logs ps exec
-
+.PHONY: all build up down clean fclean re ps logs

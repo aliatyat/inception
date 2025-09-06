@@ -1,66 +1,75 @@
-
-
-# Define services (Containers)
 services:
+  mariadb:
+    build:
+      context: ./requirements/mariadb
+      dockerfile: Dockerfile
+    container_name: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - inception
+    restart: unless-stopped
 
-  # Service: Nginx (Web server & SSL Termination)
+  wordpress:
+    build:
+      context: ./requirements/wordpress
+      dockerfile: Dockerfile
+    container_name: wordpress
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
+      DOMAIN_NAME: ${DOMAIN_NAME}
+      WP_TITLE: ${WP_TITLE}
+      WP_ADMIN_USR: ${WP_ADMIN_USR}
+      WP_ADMIN_PWD: ${WP_ADMIN_PWD}
+      WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL}
+      WP_USR: ${WP_USR}
+      WP_EMAIL: ${WP_EMAIL}
+      WP_PWD: ${WP_PWD}
+    volumes:
+      - wordpress_data:/var/www/wordpress
+      - php_socket:/run/php
+    networks:
+      - inception
+    depends_on:
+      - mariadb
+    restart: unless-stopped
+
   nginx:
-    build: ./requirements/nginx
+    build:
+      context: ./requirements/nginx
+      dockerfile: Dockerfile
     container_name: nginx
     ports:
-      - "443:443" # Map host port 443 to container port 443 (HTTPS)
+      - "8443:443"
+      - "8080:80"
     volumes:
-      - wordpress_data:/var/www/html # Mount WP files
+      - wordpress_data:/var/www/wordpress
+      - php_socket:/run/php
     networks:
-      - inception_net
-    env_file:
-      - .env
-    depends_on: # Ensures wordpress is ready before nginx tries to proxy to it
+      - inception
+    depends_on:
       - wordpress
     restart: unless-stopped
 
-  # Service: Wordpress + PHP-FPM
-  wordpress:
-    build: ./requirements/wordpress
-    container_name: wordpress
-    volumes:
-      - wordpress_data:/var/www/html # Share files with nginx
-    networks:
-      - inception_net
-    env_file:
-      - .env
-    restart: unless-stopped
-    depends_on: # Ensures mariadb starts before wordpress
-      - mariadb
-    expose:
-      - "9000" # php-fpm - NOTE: This should be aligned with other keys at same level
-
-  # Service: MariaDB Database
-  mariadb:
-    build: ./requirements/mariadb # Path to the Dockerfile
-    container_name: mariadb # Container name (must be like service name)
-    volumes:
-      - mariadb_data:/var/lib/mysql # DB persistence
-    networks:
-      - inception_net # Attach to the custom network
-    env_file:
-      - .env # Load environment vars from this file
-    restart: unless-stopped # Automatically restart unless manually stopped
-    expose:
-      - "3306"
-
-# Define Volumes (Persistent Data) - MUST BE AT ROOT LEVEL
 volumes:
-  mariadb_data: # Named volume for the database
+  mariadb_data:
+    driver: local
+  wordpress_data:
+    driver: local
+  php_socket:
     driver: local
 
-  wordpress_data: # Named volume for WordPress files (themes, plugins, uploads)
-    driver: local
-
-# Define Network (Container Communication) - MUST BE AT ROOT LEVEL
 networks:
-  inception_net:
+  inception:
     driver: bridge
-    
-
-# This network allows containers to discover each other by their service name (e.g., 'nginx' can ping 'wordpress')

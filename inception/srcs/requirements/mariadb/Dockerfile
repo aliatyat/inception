@@ -1,35 +1,30 @@
-FROM debian:bookworm-slim
+FROM debian:bullseye
 
-# Install MariaDB, the client, and some basic tools
-# mariadb-server: The MariaDB database server
-# mariadb-client: The client tools (needed for the init scribt)
-# bash: To run the shell script
+# Install MariaDB server
+RUN apt-get update && apt-get install -y \
+    mariadb-server \
+    mariadb-client \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update \
-&& apt-get install -y mariadb-server maria-client \
-bash \
-&& rm -f /var/lib/apt/lists/*
+# Copy MariaDB configuration
+COPY conf/my.cnf /etc/mysql/mariadb.conf.d/50-server.cnf
 
-# Create the directory for MariaDB data and set correct ownership
+# Copy initialization script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-RUN mkdir -p /var/lib/mysql
-RUN chmod -R mysql:mysql /var/lib/mysql
+# Create directories and set permissions
+RUN mkdir -p /var/run/mysqld && \
+    chown -R mysql:mysql /var/run/mysqld && \
+    chmod 755 /var/run/mysqld
 
-# Copy custom configuration and init script into the image
+# Create log directory
+RUN mkdir -p /var/log/mysql && \
+    chown -R mysql:mysql /var/log/mysql
 
-COPY conf/my_config.cnf /etc/mysql/my_config.cnf
-COPY tools/entrypoint.sh /tmp/entrypoint.sh
-
-# Make init script executable
-
-RUN chmod +x /tmp/entrypoint.sh
-
-# Expose the default MariaDB port (For internal container communication)
+# Expose MariaDB port
 EXPOSE 3306
 
-# Define a volume for presistent data (The actual mount is in docker-compose.yml)
-VOLUME /var/lib/mysql
-
-# The command to run when the container start it executes the custom script
-CMD ["bash", "/tmp/entrypoint.sh"]
-
+# Use custom entrypoint
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["mysqld", "--user=mysql"]

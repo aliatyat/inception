@@ -1,25 +1,29 @@
-# Use the penultimate stable Debian
-FROM debian:bookworm-slim
+FROM debian:bullseye
 
-# Install nginx and openssl for SSL certificates
-RUN apt-get update && \
-    apt-get install -y nginx openssl && \
-    rm -rf /var/lib/apt/lists/*
+# Install nginx and openssl
+RUN apt-get update && apt-get install -y \
+    nginx \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create directory for nginx PID file
-RUN mkdir -p /run/nginx
+# Create SSL certificate directory
+RUN mkdir -p /etc/nginx/ssl
 
-# Generate SSL certificate (using domain from build args)
+# Generate self-signed SSL certificate
 RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout /etc/ssl/private/nginx-selfsigned.key \
-    -out /etc/ssl/certs/nginx-selfsigned.crt \
-    -subj "/C=FR/ST=Paris/L=Paris/O=42/CN=localhost"
+    -keyout /etc/nginx/ssl/nginx-selfsigned.key \
+    -out /etc/nginx/ssl/nginx-selfsigned.crt \
+    -subj "/C=US/ST=State/L=City/O=Organization/CN=ali.42.fr"
 
-# Copy custom nginx configuration
-COPY conf/nginx.conf /etc/nginx/nginx.conf
+# Copy nginx configuration
+COPY conf/default.conf /etc/nginx/sites-available/default
+RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
-# Expose port 443 (HTTPS)
-EXPOSE 443
+# Create directory for WordPress
+RUN mkdir -p /var/www/wordpress
 
-# Start Nginx in the foreground
+# Expose ports
+EXPOSE 80 443
+
+# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
