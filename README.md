@@ -289,7 +289,7 @@ WP_ADMIN_EMAIL=admin@yourlogin.42.fr
 ### **Container Status** (All Running):
 ```bash
 CONTAINER ID   IMAGE            COMMAND                  STATUS         PORTS
-nginx          srcs-nginx       "nginx -g 'daemon of…"   Up X minutes   0.0.0.0:8443->443/tcp
+nginx          srcs-nginx       "nginx -g 'daemon of…"   Up X minutes   0.0.0.0:443->443/tcp
 wordpress      srcs-wordpress   "/tmp/setup.sh"          Up X minutes   9000/tcp
 mariadb        srcs-mariadb     "docker-entrypoint.s…"   Up X minutes   3306/tcp
 ```
