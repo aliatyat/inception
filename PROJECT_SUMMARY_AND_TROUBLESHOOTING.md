@@ -5,7 +5,7 @@
 The Inception project is a Docker-based infrastructure setup that deploys a complete LEMP stack (Linux, Nginx, MariaDB, PHP) with WordPress using Docker Compose. The project creates a containerized environment with custom domain SSL support.
 
 ### **Final Working Configuration:**
-- **Domain**: https://ali.42.fr:8443 
+- **Domain**: https://yourlogin.42.fr 
 - **Architecture**: 3 separate Docker containers
 - **Services**: MariaDB 10.5, WordPress with PHP-FPM 7.4, Nginx 1.21
 - **SSL**: Self-signed certificates for HTTPS
@@ -35,13 +35,13 @@ The Inception project is a Docker-based infrastructure setup that deploys a comp
 3. **Nginx Container (`nginx`)**
    - **Base Image**: `debian:bullseye`
    - **Purpose**: Web server and reverse proxy
-   - **Ports**: 8443 (HTTPS), 8080 (HTTP redirect)
+   - **Ports**: 443 (HTTPS), 8080 (HTTP redirect)
    - **Volume**: Shared `wordpress_data` for file access
    - **Features**: SSL termination, FastCGI proxy to WordPress
 
 ### **Network Flow:**
 ```
-Internet → Nginx:8443 (SSL) → WordPress:9000 (FastCGI) → MariaDB:3306
+Internet → Nginx:443 (SSL) → WordPress:9000 (FastCGI) → MariaDB:3306
 ```
 
 ---
@@ -67,8 +67,8 @@ Internet → Nginx:8443 (SSL) → WordPress:9000 (FastCGI) → MariaDB:3306
 ```bash
 # Manually created database and user
 CREATE DATABASE wordpress;
-CREATE USER 'wpuser'@'%' IDENTIFIED BY 'wppassword123';
-CREATE USER 'wpuser'@'wordpress.srcs_inception' IDENTIFIED BY 'wppassword123';
+CREATE USER 'wpuser'@'%' IDENTIFIED BY 'wppasswor';
+CREATE USER 'wpuser'@'wordpress.srcs_inception' IDENTIFIED BY 'wppassword';
 GRANT ALL PRIVILEGES ON wordpress.* TO 'wpuser'@'%';
 GRANT ALL PRIVILEGES ON wordpress.* TO 'wpuser'@'wordpress.srcs_inception';
 FLUSH PRIVILEGES;
@@ -79,14 +79,28 @@ FLUSH PRIVILEGES;
 **Solution**: Temporarily removed volume mounting during container building phase, then re-enabled for production
 
 ### **4. Port 443 Conflicts**
-**Problem**: System already using port 443
-**Solution**: Changed to port 8443 for HTTPS in docker-compose.yml
+**Problem**: System already using port 443. This is common if you have another web server (like Apache, another Nginx, or other services) running on your machine.
+**Solution**:
+Stop the service using port 443
+ First, find what's using port 443:
+
+  bash$ sudo netstat -tulpn | grep :443
+  bash$ sudo lsof -i :443
+
+If it's Apache or another web server, you can stop it:
+
+  # Stop Apache (if running)
+  bash$ sudo systemctl stop apache2
+
+  # Or stop other web servers
+  bash$ sudo systemctl stop nginx
+
 
 ### **5. Domain Resolution Issues**
 **Problem**: Custom domain not resolving
 **Solution**: Added to `/etc/hosts`:
 ```bash
-127.0.0.1 ali.42.fr
+127.0.0.1 yourlogin.42.fr
 ```
 
 ### **6. Critical: 502 Bad Gateway (Final Challenge)**
@@ -108,30 +122,29 @@ This was the critical fix that resolved container-to-container communication.
 ### **Docker Compose Structure**
 ```yaml
 services:
-  mariadb:
-    build: ../requirements/mariadb
+  service1:
+    build: ../requirements/service1
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword123
+      MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: wordpress
       MYSQL_USER: wpuser
-      MYSQL_PASSWORD: wppassword123
+      MYSQL_PASSWORD: wppassword
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - service1_data:/var/lib/mysql
 
-  wordpress:
-    build: ../requirements/wordpress
-    depends_on: [mariadb]
+  service2:
+    build: ../requirements/service2
+    depends_on: [service1]
     volumes:
-      - wordpress_data:/var/www/wordpress
+      - service2_data:/var/www/wordpress
 
-  nginx:
-    build: ../requirements/nginx
+  service3:
+    build: ../requirements/service3
     ports:
-      - "8443:443"
-      - "8080:80"
-    depends_on: [wordpress]
+      - "443:443"
+    depends_on: [service2]
     volumes:
-      - wordpress_data:/var/www/wordpress
+      - service2_data:/var/www/wordpress
 ```
 
 ### **Critical PHP-FPM Configuration**
@@ -173,11 +186,11 @@ location ~ \.php$ {
 3. **Nginx Container Starts** (waits for WordPress)
    - Loads SSL certificates
    - Configures reverse proxy to WordPress container
-   - Starts nginx daemon on ports 80/443
+   - Starts nginx daemon on port 443
 
 ### **Request Processing Flow**:
 
-1. **HTTPS Request**: `https://ali.42.fr:8443/`
+1. **HTTPS Request**: `https://yourlogin.42.fr/`
 2. **SSL Termination**: Nginx decrypts SSL
 3. **Routing**: Nginx determines if request needs PHP processing
 4. **FastCGI**: For .php files, nginx forwards to `wordpress:9000`
@@ -251,26 +264,26 @@ docker exec nginx ls -la /var/www/wordpress/
 ## ✅ **Final Working State**
 
 ### **Access Information**:
-- **Website URL**: https://ali.42.fr:8443
-- **WordPress Admin**: https://ali.42.fr:8443/wp-admin
-  - Username: `admin`
-  - Password: `admin123`
-  - Email: `admin@ali.42.fr`
+- **Website URL**: https://yourlogin.42.fr
+- **WordPress Admin**: https://yourlogin.42.fr/wp-admin
+  - Username: `adminusername`
+  - Password: `adminpassword`
+  - Email: `admin@yourlogin.42.fr`
 
 ### **Environment Variables** (`.env`):
 ```bash
 # Database Configuration
-MYSQL_ROOT_PASSWORD=rootpassword123
+MYSQL_ROOT_PASSWORD=rootpassword
 MYSQL_DATABASE=wordpress
 MYSQL_USER=wpuser
-MYSQL_PASSWORD=wppassword123
+MYSQL_PASSWORD=wppassword
 
 # WordPress Configuration
-DOMAIN_NAME=ali.42.fr
-WP_TITLE=Ali WordPress Site
-WP_ADMIN_USR=admin
-WP_ADMIN_PWD=admin123
-WP_ADMIN_EMAIL=admin@ali.42.fr
+DOMAIN_NAME=yourlogin.42.fr
+WP_TITLE=yourlogin WordPress Site
+WP_ADMIN_USR=adminusername
+WP_ADMIN_PWD=adminpassword
+WP_ADMIN_EMAIL=admin@yourlogin.42.fr
 ```
 
 ### **Container Status** (All Running):
@@ -317,5 +330,4 @@ mariadb        srcs-mariadb     "docker-entrypoint.s…"   Up X minutes   3306/t
 
 ---
 
-*Generated on: September 6, 2025*
 *Project Status: ✅ COMPLETE AND WORKING*

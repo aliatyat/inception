@@ -74,7 +74,7 @@ mysql -e "FLUSH PRIVILEGES;"
 ```php
 define( 'DB_NAME', 'wordpress' );
 define( 'DB_USER', 'wpuser' );
-define( 'DB_PASSWORD', 'wppassword123' );
+define( 'DB_PASSWORD', 'wppassword' );
 define( 'DB_HOST', 'mariadb' );  // Removed :3306 port specification
 ```
 

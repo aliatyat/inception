@@ -2,11 +2,15 @@
 
 echo "Starting WordPress setup..."
 
-# Set default values
+# Read passwords from Docker secret files
+MYSQL_PASSWORD=$(cat /run/secrets/db_password)
+WP_ADMIN_PWD=$(cat /run/secrets/wp_admin_password)
+WP_PWD=$(cat /run/secrets/wp_user_password)
+
+# Set other variables from environment
 MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-rootpassword123}
 MYSQL_DATABASE=${MYSQL_DATABASE:-wordpress}
 MYSQL_USER=${MYSQL_USER:-wpuser}
-MYSQL_PASSWORD=${MYSQL_PASSWORD:-wppassword123}
 
 # Wait for MariaDB to be ready
 echo "Waiting for MariaDB to be ready..."
@@ -67,13 +71,18 @@ fi
 if ! wp core is-installed --allow-root 2>/dev/null; then
     echo "Installing WordPress core..."
     wp core install \
-        --url="https://ali.42.fr:8443" \
+        --url="https://alalauty.42.fr" \
         --title="Ali's WordPress Site" \
-        --admin_user="admin" \
-        --admin_password="admin123" \
-        --admin_email="admin@ali.42.fr" \
+        --admin_user="$WP_ADMIN_USR" \
+        --admin_password="$WP_ADMIN_PWD" \
+        --admin_email="$WP_ADMIN_EMAIL" \
         --allow-root \
-        --skip-email
+        --skip-email \
+        # Create additional user if needed
+    if [ ! -z "$WP_USR" ]; then
+        echo "Creating additional user..."
+        wp user create "$WP_USR" "$WP_EMAIL" --user_pass="$WP_PWD" --role="subscriber" --allow-root
+    fi
     
     echo "WordPress installation completed!"
 else

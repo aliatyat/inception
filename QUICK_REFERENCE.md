@@ -15,7 +15,7 @@ docker-compose down && docker-compose up -d --build
 ## 🔍 Quick Debugging
 ```bash
 # Check if website is working
-curl -k -s -o /dev/null -w "%{http_code}\n" https://ali.42.fr:8443
+curl -k -s -o /dev/null -w "%{http_code}\n" https://yourlogin.42.fr
 
 # Check container status
 docker ps
@@ -48,7 +48,7 @@ docker exec wordpress sed -i 's/^listen = 9000/listen = 0.0.0.0:9000/' /etc/php/
 docker exec wordpress service php7.4-fpm restart
 
 # Verify the fix
-curl -k -s -o /dev/null -w "%{http_code}\n" https://ali.42.fr:8443
+curl -k -s -o /dev/null -w "%{http_code}\n" https://yourlogin.42.fr:8443
 ```
 
 ### 403 Forbidden Errors
@@ -87,13 +87,13 @@ docker exec mariadb mysql -u wpuser -p wordpress -e "SELECT 1;"
 ## 🌐 Website Testing
 ```bash
 # Test HTTPS (should return 200)
-curl -k https://ali.42.fr:8443
+curl -k https://yourlogin.42.fr:8443
 
 # Test HTTP redirect (should return 301)  
-curl -I http://ali.42.fr:8080
+curl -I http://yourlogin.42.fr
 
 # Get first few lines of website
-curl -k https://ali.42.fr:8443 2>/dev/null | head -5
+curl -k https://yourlogin.42.fr 2>/dev/null | head -5
 ```
 
 ## 🛠️ The Magic Fix That Solved 502 Errors

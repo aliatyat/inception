@@ -1,0 +1,69 @@
+Issue 1: Docker Daemon Not Running
+Error: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
+
+Solution:
+bash
+# Start the Docker service
+sudo systemctl start docker
+
+# Enable Docker to start on boot (optional but recommended)
+sudo systemctl enable docker
+
+# Check if Docker is running
+sudo systemctl status docker
+
+# Verify Docker is working
+docker ps
+
+Issue 2: Error code 403 
+
+check the connection 
+
+bash$ curl -k -I https://yourlogin.42.fr/
+
+If you see somthing like:
+
+HTTP/1.1 403 Forbidden 
+Server: nginx/1.18.0 
+Date: Tue, 09 Sep 2025 15:01:42 GMT 
+Content-Type: text/html 
+Content-Length: 153 
+Connection: keep-alive
+
+403 error means WordPress isn't ready yet. So check the logs to see what's happening:
+
+bash$ docker-compose logs wordpress | tail -10
+
+If the database connection is still failing. Check if MariaDB created the database and user properly:
+
+bash$ docker-compose exec mariadb mysql -uroot -password -e "SHOW DATABASES; SELECT User, Host FROM mysql.user WHERE User='wpuser';"
+
+
+If the database and user weren't created! The MariaDB initialization script didn't run properly. Create them manually now and then improve the script for future rebuilds:
+
+bash$ docker-compose exec mariadb mysql -uroot -password -e "CREATE DATABASE IF NOT EXISTS wordpress; CREATE USER IF NOT EXISTS 'wpuser'@'%' IDENTIFIED BY 'wppassword'; GRANT ALL PRIVILEGES ON wordpress.* TO 'wpuser'@'%'; FLUSH PRIVILEGES; SHOW DATABASES;"
+
+
+Restart WordPress to retry the connection:
+
+
+bash$ docker-compose restart wordpress
+
+bash$ sleep 10
+
+Now check
+
+bash$ curl -k -I https://yourlogin.42.fr/
+
+If you see somthing like:
+
+HTTP/1.1 200 OK 
+Server: nginx/1.18.0 
+Date: Tue, 09 Sep 2025 15:05:47 GMT 
+Content-Type: text/html; charset=UTF-8 
+Connection: keep-alive 
+Link: <https://yourlogin.42.fr/index.php?rest_route=/>; 
+rel="https://api.w.org/"
+
+Perfect! WordPress is now working with HTTP 200 OK!
+

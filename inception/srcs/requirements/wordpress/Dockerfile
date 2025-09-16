@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     unzip \
     mariadb-client \
+    fcgiwrap \
     && rm -rf /var/lib/apt/lists/*
 
 # Download and install WordPress

@@ -1,34 +1,25 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: user <user@student.42.fr>                  +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2023/01/01 00:00:00 by user              #+#    #+#              #
-#    Updated: 2023/01/01 00:00:00 by user             ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
-
 NAME = inception
-DATA_DIR = ./data
+DATA_DIR = /home/alalauty/data
 COMPOSE_FILE = ./srcs/docker-compose.yml
 
 # Check if docker compose is available, otherwise use docker-compose
-DOCKER_COMPOSE = $(shell command -v docker-compose 2> /dev/null || echo "docker compose")
+DOCKER_COMPOSE = docker compose
 
 all: build up
 
 build:
-	@mkdir -p $(DATA_DIR)/wordpress
+	@mkdir -p $(DATA_DIR)
 	@mkdir -p $(DATA_DIR)/mariadb
-	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) build
+	@mkdir -p $(DATA_DIR)/wordpress
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) --env-file ./srcs/.env build
 
 up:
 	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) up -d
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) --env-file ./srcs/.env up -d
 
 down:
 	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) down
+	@$(DOCKER_COMPOSE) -f $(COMPOSE_FILE) --env-file ./srcs/.env down
 
 clean: down
 	@docker system prune -a --force

@@ -1,4 +1,9 @@
 <?php
+
+// echo 'WORDPRESS_DB_NAME: ' . getenv('WORDPRESS_DB_NAME') . '<br>';
+// echo 'WORDPRESS_DB_USER: ' . getenv('WORDPRESS_DB_USER') . '<br>';
+// echo 'WORDPRESS_DB_PASSWORD: ' . getenv('WORDPRESS_DB_PASSWORD') . '<br>';
+// echo 'WORDPRESS_DB_HOST: ' . getenv('WORDPRESS_DB_HOST') . '<br>';
 /**
  * The base configuration for WordPress
  *
@@ -20,13 +25,15 @@
 
 // ** Database settings - You can get this info from your web host ** //
 /** The name of the database for WordPress */
+$db_password = trim(file_get_contents('/run/secrets/db_password'));
+
 define( 'DB_NAME', 'wordpress' );
 
 /** Database username */
 define( 'DB_USER', 'wpuser' );
 
 /** Database password */
-define( 'DB_PASSWORD', 'wppassword123' );
+define( 'DB_PASSWORD', $db_password );
 
 /** Database hostname */
 define( 'DB_HOST', 'mariadb' );
@@ -84,8 +91,8 @@ define( 'WP_DEBUG', false );
 /* Add any custom values between this line and the "stop editing" line. */
 
 // WordPress Site URLs
-define( 'WP_HOME', 'https://ali.42.fr:8443' );
-define( 'WP_SITEURL', 'https://ali.42.fr:8443' );
+define( 'WP_HOME', 'https://alalauty.42.fr' );
+define( 'WP_SITEURL', 'https://alalauty.42.fr' );
 
 /* That's all, stop editing! Happy publishing. */
 

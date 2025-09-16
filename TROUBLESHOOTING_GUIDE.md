@@ -1,7 +1,7 @@
 # Inception Project - Troubleshooting Guide & Commands
 
 ## Project Overview
-This Docker-based project creates a WordPress website with MariaDB and Nginx using custom domain `ali.42.fr` with SSL certificates.
+This Docker-based project creates a WordPress website with MariaDB and Nginx using custom domain `yourlogin.42.fr` with SSL certificates.
 
 ## Architecture
 - **MariaDB Container**: Database server (port 3306)

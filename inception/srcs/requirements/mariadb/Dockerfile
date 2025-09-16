@@ -8,10 +8,13 @@ RUN apt-get update && apt-get install -y \
 
 # Copy MariaDB configuration
 COPY conf/my.cnf /etc/mysql/mariadb.conf.d/50-server.cnf
+COPY conf/my.cnf /etc/my.cnf
 
 # Copy initialization script
-COPY docker-entrypoint.sh /usr/local/bin/
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+# COPY test.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+# RUN chmod +x /usr/local/bin/test.sh
 
 # Create directories and set permissions
 RUN mkdir -p /var/run/mysqld && \

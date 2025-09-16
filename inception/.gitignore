@@ -1,0 +1,11 @@
+# Ignore environment files and secrets
+srcs/.env
+.env
+*.env
+# Ignore Docker secrets
+srcs/secrets/
+secrets/
+# Ignore other sensitive or generated files
+*.log
+*.tmp
+secrets/
