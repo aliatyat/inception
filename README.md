@@ -35,7 +35,7 @@ The Inception project is a Docker-based infrastructure setup that deploys a comp
 3. **Nginx Container (`nginx`)**
    - **Base Image**: `debian:bullseye`
    - **Purpose**: Web server and reverse proxy
-   - **Ports**: 443 (HTTPS), 8080 (HTTP redirect)
+   - **Port**: 443 (HTTPS)
    - **Volume**: Shared `wordpress_data` for file access
    - **Features**: SSL termination, FastCGI proxy to WordPress
 
