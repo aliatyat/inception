@@ -64,15 +64,6 @@ Internet → Nginx:443 (SSL) → WordPress:9000 (FastCGI) → MariaDB:3306
 - Host-based connection restrictions
 
 **Solutions Applied**:
-```bash
-# Manually created database and user
-CREATE DATABASE wordpress;
-CREATE USER 'wpuser'@'%' IDENTIFIED BY 'wppasswor';
-CREATE USER 'wpuser'@'wordpress.srcs_inception' IDENTIFIED BY 'wppassword';
-GRANT ALL PRIVILEGES ON wordpress.* TO 'wpuser'@'%';
-GRANT ALL PRIVILEGES ON wordpress.* TO 'wpuser'@'wordpress.srcs_inception';
-FLUSH PRIVILEGES;
-```
 
 ### **3. Volume Mounting Conflicts**
 **Problem**: Docker volumes hiding container files during development
@@ -90,10 +81,8 @@ Stop the service using port 443
 If it's Apache or another web server, you can stop it:
 
   # Stop Apache (if running)
-  bash$ sudo systemctl stop apache2
 
   # Or stop other web servers
-  bash$ sudo systemctl stop nginx
 
 
 ### **5. Domain Resolution Issues**
@@ -123,28 +112,13 @@ This was the critical fix that resolved container-to-container communication.
 ```yaml
 services:
   service1:
-    build: ../requirements/service1
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: wordpress
-      MYSQL_USER: wpuser
-      MYSQL_PASSWORD: wppassword
-    volumes:
-      - service1_data:/var/lib/mysql
+   add here 
 
   service2:
-    build: ../requirements/service2
-    depends_on: [service1]
-    volumes:
-      - service2_data:/var/www/wordpress
+   add here   
 
   service3:
-    build: ../requirements/service3
-    ports:
-      - "443:443"
-    depends_on: [service2]
-    volumes:
-      - service2_data:/var/www/wordpress
+   add here  
 ```
 
 ### **Critical PHP-FPM Configuration**
@@ -158,11 +132,7 @@ listen.group = www-data
 ### **Nginx FastCGI Configuration**
 ```nginx
 location ~ \.php$ {
-    try_files $uri =404;
-    fastcgi_pass wordpress:9000;  # Container-to-container communication
-    fastcgi_index index.php;
-    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-    include fastcgi_params;
+   add your code here 
 }
 ```
 
@@ -205,62 +175,6 @@ location ~ \.php$ {
 
 ---
 
-## 🛠️ **Troubleshooting Commands Used**
-
-### **Container Management**:
-```bash
-# Clean restart
-make fclean && make up
-
-# Check container status
-docker ps
-
-# View logs
-docker logs [container_name]
-docker-compose logs [service_name]
-
-# Execute commands in containers
-docker exec [container] [command]
-```
-
-### **Database Debugging**:
-```bash
-# Check databases
-docker exec mariadb mysql -u root -p -e "SHOW DATABASES;"
-
-# Check users
-docker exec mariadb mysql -u root -p -e "SELECT User, Host FROM mysql.user;"
-
-# Test connection from WordPress
-docker exec wordpress mysql -h mariadb -u wpuser -p -e "SHOW DATABASES;"
-```
-
-### **Network Debugging**:
-```bash
-# Check listening ports
-docker exec wordpress cat /proc/net/tcp
-
-# Check PHP-FPM processes
-docker exec wordpress ps aux | grep php
-
-# Check nginx configuration
-docker exec nginx nginx -t
-```
-
-### **File System Debugging**:
-```bash
-# Check WordPress files
-docker exec wordpress ls -la /var/www/wordpress/
-
-# Check permissions
-docker exec wordpress ls -la /var/www/
-
-# Check nginx can access files
-docker exec nginx ls -la /var/www/wordpress/
-```
-
----
-
 ## ✅ **Final Working State**
 
 ### **Access Information**:
@@ -273,17 +187,10 @@ docker exec nginx ls -la /var/www/wordpress/
 ### **Environment Variables** (`.env`):
 ```bash
 # Database Configuration
-MYSQL_ROOT_PASSWORD=rootpassword
-MYSQL_DATABASE=wordpress
-MYSQL_USER=wpuser
-MYSQL_PASSWORD=wppassword
+
 
 # WordPress Configuration
-DOMAIN_NAME=yourlogin.42.fr
-WP_TITLE=yourlogin WordPress Site
-WP_ADMIN_USR=adminusername
-WP_ADMIN_PWD=adminpassword
-WP_ADMIN_EMAIL=admin@yourlogin.42.fr
+
 ```
 
 ### **Container Status** (All Running):
